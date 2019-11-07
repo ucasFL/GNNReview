@@ -8,6 +8,7 @@
 \usepackage{setspace}
 \usepackage{hyperref}
 \usepackage{url}
+\usepackage{cite}
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -41,6 +42,7 @@
 \date{}
 
 \begin{document}
+\bibliographystyle{IEEEtran}
 \maketitle
 \zihao{-4}
 \CJKfamily{zhsong}
@@ -51,8 +53,11 @@
 \textbf{关键字：}图神经网络、Node Embedding、RGNN、GCN、Graph Generation
 \end{abstract}
 
+参考文献测试：引用\cite{grover2016node2vec}
 \input{Tex/Introduction.tex}
 
+%reference
+\bibliography{./Bib/ref}
 \end{document}
 
 
