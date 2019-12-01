@@ -1,5 +1,5 @@
 \section{节点表示学习}
-在第\ref{Intro}节中，我们谈到，浅层的node embedding是一类较为简单的图表示学习方法，而其中比较具有代表性的就是\emph{DEEPWALK}、\emph{LINE}以及\emph{node2vec}，因此，在本节中，我们将简要介绍这三种node embedding方法。
+在第\ref{Intro}节中，我们谈到，浅层的node embedding是一类较为简单的图表示学习方法，而其中比较具有代表性的就是\emph{DEEPWALK}、\emph{LINE}以及\emph{Node2vec}，因此，在本节中，我们将简要介绍这三种node embedding方法。
 
 \subsection{\emph{DEEPWALK}}
 \emph{DEEPWALK}是由Perozzi等\cite{perozzi2014deepwalk}提出的一个非常经典的节点表示学习方法，其核心思想是将network embedding与自然语言处理中极为重要的word embedding方法word2vec联系起来，从而将network embedding问题转换成了一个word embedding问题。
@@ -52,15 +52,12 @@ Tang等\cite{tang2015line}提出了一种新的network embedding方法：\emph{L
 
 实验证明，当考虑了一阶相似度之后，\emph{LINE}在节点分类任务中的效果要好于\emph{DEEPWALK}。
 
-\subsection{\emph{node2vec}}
-Node2Vec\cite{grover2016node2vec}是一份基于DeepWalk的延伸工作，它改进了DeepWalk随机游走的策略。在网络中的节点和边缘上的预测任务需要在学习算法所使用的工程特征方面花费精力。最近在更广泛的表征学习领域的研究通过学习特征本身在自动化预测方面取得了重大进展。在Node2vec中，学习了节点到特征的低维空间的映射，这最大化了保留节点的网络邻域的可能性。定义了节点网络邻域的灵活概念，并设计了一个有偏差的随机游走过程，有效地探索了不同的邻域。这也是该算法的主要贡献。该算法推广了基于网络邻域的严格概念的先前工作，并且作者认为探索邻域的额外灵活性是学习更丰富表示的关键。
+\subsection{\emph{Node2vec}}
+\emph{Node2vec}\cite{grover2016node2vec}是一份基于\emph{DEEPWALK}的延伸工作，它改进了\emph{DEEPWALK}随机游走的策略。\emph{DEEPWALK}根据边的权重进行随机游走，而\emph{Node2vec}加了一个权重调整参数$\alpha$，最终生成的随机序列是$DFS$和$BFS$的结合。随机游走产生的序列，仍然使用SkipGram模型进行训练。
 
-DeepWalk中根据边的权重进行随机游走，而Node2Vec加了一个权重调整参数$\alpha$，最终生成的随机序列是一种DFS和BFS的结合，模型仍使用$skip gram$去训练，其中DFS和BFS是经典的查找策略。Node2Vec方法认为，现有的方法无法很好的保留网络的结构信息，例如图\ref{fig:node2vec1}所示，有一些点之间的连接非常紧密(比如$u, s1, s2, s3,s4$)，他们之间就组成了一个社区(community)。网络中可能存在着各种各样的社区，而有的结点在各个社区中可能又扮演着相似的角色(比如$u$与$s6$)。
+\emph{Node2vec}认为，现有的方法无法很好的保留网络的结构信息，例如图\ref{fig:node2vec1}所示，有一些点之间的连接非常紧密(比如$u, s1, s2, s3,s4$)，他们之间就组成了一个社区(community)；同时，网络中可能存在着各种各样的社区，而有的结点在各个社区中可能又扮演着相似的角色(比如$u$与$s6$)。因此，\emph{Node2vec}的优化目标就是让同一个社区内的结点表示能够相互接近，并且在不同社区内扮演相似角色的结点表示也要相互接近。
 
-\textbf{基本假设}:\textbf{为了}使得优化问题易于处理，给出了两个标准假设：
-1.条件独立，2.特征空间的对称性。
-
-优化目标:让同一个社区内的结点表示能够相互接近，或在不同社区内扮演相似角色的结点表示也要相互接近。
+\emph{Node2vec}同时结合了深入优先搜索（$DFS$）和广度优先搜索（$BFS$）来实现上述优化目标。如图\ref{fig:node2vec1}所示，深度优先游走策略将会限制游走序列中出现重复的结点，防止游走掉头，促进游走向更远的地方进行。而广度优先游走策略相反将会促进游走不断的回头，去访问上一步结点的其他邻居结点。这样一来，当使用广度优先策略时，游走将会在一个社区内长时间停留，使得一个社区内的结点互相成为context，这也就达到了第一条优化目标。反之，当使用深度优先的策略的时候，游走很难在同一个社区内停留，也就达到了第二条优化目标。
 
 \begin{figure}[!htbp]
 	\centering
@@ -69,97 +66,23 @@ DeepWalk中根据边的权重进行随机游走，而Node2Vec加了一个权重�
 	\label{fig:node2vec1}
 \end{figure}
 
-\textbf{方法简述}:
-
-1.随机游走
-
-给定一个起始节点$u$，我们模拟一个固定长度l的随机游走，$c_i$表示行走中的第$i$个节点，起始节点：$c_0 = u$。节点$c_{i-1}$走到节点$c_i$概率定义为:
-
-$$ P(c_i=x|c_{i-1}=v)=\left\{
-\begin{aligned}
-\dfrac{\pi_{uv}}{Z} & if (u,v)\in E\\
-0 & otherwise
-\end{aligned}
-\right.
-$$
-
-$\pi_{vx}$是节点之间非归一化概率；Z是节点之间概率的和，作为归一化因子。
-
-2.寻找偏差$\alpha$
-
-假设已知游走路径已从$t$走到$v$,从节点$v$ 走到下一个节点$x$按照转移概率$\pi_{vx}$选择对应的节点；$\pi_{vx}=\alpha_{ p q}(t,x)·w_{vx}$,如图\ref{fig:node2vec2}所示
+如图\ref{fig:node2vec2}所示，在一次随机游走过程中，假设当前游走路径从$t$到达$v$（当前位于$v$），当计算从$v$到下一个节点$x$的转移概率时，需要先计算搜索偏差因子$\alpha$，其定义为
+\[\alpha_{pq}(t, x)=\begin{cases} & \frac1p \qquad \text{if}\ d_{tx} = 0\\
+  & 1 \qquad \text{if}\ d_{tx} = 1\\
+& \frac1q \qquad \text{if}\ d_{tx} = 2\end{cases}\]
 
 \begin{figure}[!htbp]
 	\centering
-	\includegraphics[scale=1]{Fig/Node2Vec_2.pdf}
+	\includegraphics[scale=0.8]{Fig/Node2Vec_2.pdf}
 	\caption{在node2vec中随机游走的说明\cite{grover2016node2vec}}
 	\label{fig:node2vec2}
 \end{figure}
+其中，$d_{tx}$表示$t$与$x$之间的最短路径，而参数$p,q$用于控制深度优先搜索策略和广度优先搜索策略的比重。当计算出偏差因子之后，定义$v$和$x$之间的非归一化转移概率为
+\[\pi_{vx} = \alpha_{pq}(t, x)\cdot w_{vx}\]
+其中，$w_{vx}$表示边$(v, x)$的权重。最后，节点$v$到$x$的转移概率为
 
-其中，$d_{tx}$是$t$到$x$的最近距离。在论文中，$d_{tx}$的取值为[0 1 2]。$p,q$这两个参数决定离开起始节点的速度。
+\[ P(c_i=x|c_{i-1}=v)=\begin{cases} & \frac{\pi_{vx}}{Z}\qquad \text{if}\ (u, v) \in E\\
+& 0 \qquad\quad  \text{if}\ (u, v) \notin E\end{cases}\]
+$Z$为归一化因子。值得一提的是，当$p=q=1$时，\emph{Node2vec}退化为\emph{DEEPWALK}。
 
-参数$p$：
-
-1.表示访问已遍历节点的可能性；
-
-2.$p > max(q, 1)$：表示在连续两步，越小的可能访问已遍历节点；这种策略鼓励适度的探索，并避免了距离为2的节点抽样中的冗余
-
-3.$p < min(q, 1)$：表示遍历的节点接近起始节点；
-
-参数$q$
-
-1.允许搜索区分“向内”和“向外”节点；
-
-2.$q>1$:表示越大的可能抽样节点靠近$t$；可以获得与遍历中的开始节点相关的底层图的局部视图,与BFS类似；
-
-3.$q<1$:表示越大的可能抽样节点远离$t$,与DFS类似；
-
-4.$p=q=1$就是deepwalk
-
-
-Node2vec伪代码
-
-\begin{tabular}{l}
-	\hline
-	
-	\textbf{Algorithm 1} The node2vec algorithm.\\
-	
-	\textbf{LearnFeatures} (Graph $G = (V, E, W)$, Dimensions $d$, Walks \\per node $r$, Walk length $l$, Context size $k$, Return $p$, In-out $q$)\\
-	
-	$\pi$ = PreprocessModifiedWeights($G, p, q$)\\
-	
-	$G0 = (V, E, π)$\\
-	
-	Initialize walks to Empty\\
-	
-	\textbf{for} iter = 1 \textbf{to} $r$ \textbf{do}\\
-	
-	\quad \textbf{for all} nodes $u \in V $\textbf{do}\\
-	
-	\quad\quad $walk$ = node2vecWalk($G0, u, l$)\\
-	
-	\quad\quad Append $walk$ $to$ $walks$\\
-	
-	$f$ = StochasticGradientDescent($k, d, walks$)\\
-	
-	return $f$\\
-	\hline 
-	
-	\textbf{node2vecWalk} (Graph $G0 = (V, E, \pi])$, Start node $u$, Length $l$)\\
-	
-	Inititalize $walk$ to $[u]$	\\
-	
-	\textbf{for} $walk\_iter$ = 1 to $l$ \textbf{do}	\\
-	
-	\quad$curr$ = walk[1]	\\
-	
-	\quad$Vcurr$ = GetNeighbors($curr, G0$) $s$ = AliasSample($Vcurr, \pi$)\\
-	
-	\quad Append $s$ to $walk$	\\
-	
-	\textbf{return} $walk$	\\
-	\hline   
-	
-\end{tabular}
-
-
+实验证明，当调整好适当的$p,q$值之后，\emph{Node2vec}在多标签分类任务中的效果要好于\emph{DEEPWALK}。
