@@ -53,7 +53,113 @@ Tang等\cite{tang2015line}提出了一种新的network embedding方法：\emph{L
 实验证明，当考虑了一阶相似度之后，\emph{LINE}在节点分类任务中的效果要好于\emph{DEEPWALK}。
 
 \subsection{\emph{node2vec}}
-在网络中的节点和边缘上的预测任务需要在学习算法所使用的工程特征方面花费精力。最近在更广泛的表征学习领域的研究通过学习特征本身在自动化预测方面取得了重大进展。在Node2vec中，学习了节点到特征的低维空间的映射，这最大化了保留节点的网络邻域的可能性。定义了节点网络邻域的灵活概念，并设计了一个有偏差的随机游走过程，有效地探索了不同的邻域。该算法推广了基于网络邻域的严格概念的先前工作，并且作者认为探索邻域的额外灵活性是学习更丰富表示的关键。
+Node2Vec\cite{grover2016node2vec}是一份基于DeepWalk的延伸工作，它改进了DeepWalk随机游走的策略。在网络中的节点和边缘上的预测任务需要在学习算法所使用的工程特征方面花费精力。最近在更广泛的表征学习领域的研究通过学习特征本身在自动化预测方面取得了重大进展。在Node2vec中，学习了节点到特征的低维空间的映射，这最大化了保留节点的网络邻域的可能性。定义了节点网络邻域的灵活概念，并设计了一个有偏差的随机游走过程，有效地探索了不同的邻域。这也是该算法的主要贡献。该算法推广了基于网络邻域的严格概念的先前工作，并且作者认为探索邻域的额外灵活性是学习更丰富表示的关键。
 
+DeepWalk中根据边的权重进行随机游走，而Node2Vec加了一个权重调整参数$\alpha$，最终生成的随机序列是一种DFS和BFS的结合，模型仍使用$skip gram$去训练，其中DFS和BFS是经典的查找策略。Node2Vec方法认为，现有的方法无法很好的保留网络的结构信息，例如图\ref{fig:node2vec1}所示，有一些点之间的连接非常紧密(比如$u, s1, s2, s3,s4$)，他们之间就组成了一个社区(community)。网络中可能存在着各种各样的社区，而有的结点在各个社区中可能又扮演着相似的角色(比如$u$与$s6$)。
+
+\textbf{基本假设}:\textbf{为了}使得优化问题易于处理，给出了两个标准假设：
+1.条件独立，2.特征空间的对称性。
+
+优化目标:让同一个社区内的结点表示能够相互接近，或在不同社区内扮演相似角色的结点表示也要相互接近。
+
+\begin{figure}[!htbp]
+	\centering
+	\includegraphics[scale=1]{Fig/Node2Vec_1.pdf}
+	\caption{BFS和DFS从节点$u$开始的搜索策略\cite{grover2016node2vec}}
+	\label{fig:node2vec1}
+\end{figure}
+
+\textbf{方法简述}:
+
+1.随机游走
+
+给定一个起始节点$u$，我们模拟一个固定长度l的随机游走，$c_i$表示行走中的第$i$个节点，起始节点：$c_0 = u$。节点$c_{i-1}$走到节点$c_i$概率定义为:
+
+$$ P(c_i=x|c_{i-1}=v)=\left\{
+\begin{aligned}
+\dfrac{\pi_{uv}}{Z} & if (u,v)\in E\\
+0 & otherwise
+\end{aligned}
+\right.
+$$
+
+$\pi_{vx}$是节点之间非归一化概率；Z是节点之间概率的和，作为归一化因子。
+
+2.寻找偏差$\alpha$
+
+假设已知游走路径已从$t$走到$v$,从节点$v$ 走到下一个节点$x$按照转移概率$\pi_{vx}$选择对应的节点；$\pi_{vx}=\alpha_{ p q}(t,x)·w_{vx}$,如图\ref{fig:node2vec2}所示
+
+\begin{figure}[!htbp]
+	\centering
+	\includegraphics[scale=1]{Fig/Node2Vec_2.pdf}
+	\caption{在node2vec中随机游走的说明\cite{grover2016node2vec}}
+	\label{fig:node2vec2}
+\end{figure}
+
+其中，$d_{tx}$是$t$到$x$的最近距离。在论文中，$d_{tx}$的取值为[0 1 2]。$p,q$这两个参数决定离开起始节点的速度。
+
+参数$p$：
+
+1.表示访问已遍历节点的可能性；
+
+2.$p > max(q, 1)$：表示在连续两步，越小的可能访问已遍历节点；这种策略鼓励适度的探索，并避免了距离为2的节点抽样中的冗余
+
+3.$p < min(q, 1)$：表示遍历的节点接近起始节点；
+
+参数$q$
+
+1.允许搜索区分“向内”和“向外”节点；
+
+2.$q>1$:表示越大的可能抽样节点靠近$t$；可以获得与遍历中的开始节点相关的底层图的局部视图,与BFS类似；
+
+3.$q<1$:表示越大的可能抽样节点远离$t$,与DFS类似；
+
+4.$p=q=1$就是deepwalk
+
+
+Node2vec伪代码
+
+\begin{tabular}{l}
+	\hline
+	
+	\textbf{Algorithm 1} The node2vec algorithm.\\
+	
+	\textbf{LearnFeatures} (Graph $G = (V, E, W)$, Dimensions $d$, Walks \\per node $r$, Walk length $l$, Context size $k$, Return $p$, In-out $q$)\\
+	
+	$\pi$ = PreprocessModifiedWeights($G, p, q$)\\
+	
+	$G0 = (V, E, π)$\\
+	
+	Initialize walks to Empty\\
+	
+	\textbf{for} iter = 1 \textbf{to} $r$ \textbf{do}\\
+	
+	\quad \textbf{for all} nodes $u \in V $\textbf{do}\\
+	
+	\quad\quad $walk$ = node2vecWalk($G0, u, l$)\\
+	
+	\quad\quad Append $walk$ $to$ $walks$\\
+	
+	$f$ = StochasticGradientDescent($k, d, walks$)\\
+	
+	return $f$\\
+	\hline 
+	
+	\textbf{node2vecWalk} (Graph $G0 = (V, E, \pi])$, Start node $u$, Length $l$)\\
+	
+	Inititalize $walk$ to $[u]$	\\
+	
+	\textbf{for} $walk\_iter$ = 1 to $l$ \textbf{do}	\\
+	
+	\quad$curr$ = walk[1]	\\
+	
+	\quad$Vcurr$ = GetNeighbors($curr, G0$) $s$ = AliasSample($Vcurr, \pi$)\\
+	
+	\quad Append $s$ to $walk$	\\
+	
+	\textbf{return} $walk$	\\
+	\hline   
+	
+\end{tabular}
 
 
