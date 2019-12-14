@@ -1,1 +1,28 @@
-\subsection{卷积图神经网络}
+\subsection{图卷积神经网络}
+卷积神经网络(CNN)无法处理非欧几里得(Non Euclidean Structure)的数据，学术上的表达是传统的离散卷积在Non Euclidean Structure的数据上无法保持平移不变性。也就是说在拓扑图中每个顶点的相邻顶点数目都可能不同，那么也就无法用一个同样的尺寸的卷积核来进行卷积运算。CNN无法处理Non Euclidean Structure的数据，又希望在拓扑图上有效的提取空间特征来进行学习，所以GCN成为研究重点。
+图结构的数据在现实应用中非常常见，比如: Social Networks, Citation Netwoks, Knowledge Graphs等。图半监督学习的设定是，在给定的图结构的数据中，只有少部分节点是有标记的，大部分节点是未标记的。其任务就是预测出未标记节点的label。
+
+经典的方法大概可以分为两类：Standard Approach和Embedding-based Approach。来自阿姆斯特丹大学的作者Thomas N.Kipf Max Welling采用图卷积神经网络来进行半监督分类\cite{kipf2016semi}。接下来，将对图卷积神经网络进行简要的介绍。
+
+图卷积神经网络(Graph Convolutional Networks)，对于一个图$G=(V,E)$，我们有输入$X$是一个$N\times D$的矩阵，表示每个节点的特征，同时有图的邻接矩阵$A$。我们希望得到一个$N\times F$的特征矩阵$Z$，表示我们学得的每个节点的特征表示，其中$F$是我们希望得到的维度。
+
+对于$L$层的神经网络来说，可以表示为$H^{l+1}=f(H^l,A)$，其中$H^0=X,H^L=Z$。
+
+传统的图像上的卷积，可以看作多余每一个节点，都加上其邻居节点的信息。而对于图来说，也可以通过$f(H^l,A)=\delta(AH^lW^l)$完成类似的操作。从公式中不难看出，乘以邻接矩阵$A$就相当于对于每个节点，都加上其邻居节点的信息，这也可以看作是传统卷积的一种拓展。值得注意的是，这样的操作并没有加上自身的信息，除非这个节点有自环。因此，为了保证每个节点都能加上自己的信息，都强行加上自环。即：$\widetilde{A}=A+I$。与此同时，为了计算的简便，需要对A矩阵进行正则化操作，即：$D^{-\frac{1}{2}}AD^{\frac{1}{2}}$。
+
+经过对于每个节点加上自环和正则化后，传播规则变为
+\[f(H^l,A)=\delta(\widehat{D}^{-\frac{1}{2}}\widehat{A}\widehat{D}^{\frac{1}{2}}H^lW^l),\quad \widehat{A}=A+I
+\]
+
+一个信号$x$与一个滤波器$g\theta^{'}$的卷积定义为
+\[
+g\theta^{'}*x \approx \sum_{k=0}^{K}\theta_k^{'}T_k(\widehat{L})x,
+\]
+
+其中，$\widehat{L}=\frac{2}{\lambda_{max}}L-I_{N}$，$T_k(x)=2xT_{k-1}(x)-T_{k-2}(x),T_{0}(x)=1,T_{1}(x)=x$
+
+在线性图卷积网络中，我们进一步的约束$\lambda_{max}\approx2$，在这个约束下，图卷积被简化为下式
+\[
+g\theta^{'}*x \approx 
+\theta_0^{'}x+\theta_1^{'}(L-I_N)x=\theta_0^{'}x+\theta_1^{'}D^{-\frac{1}{2}}AD^{\frac{1}{2}}
+\]
