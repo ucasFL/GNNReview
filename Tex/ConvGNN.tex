@@ -1,4 +1,4 @@
-\subsection{图卷积神经网络}
+\subsection{卷积图神经网络}
 卷积神经网络(CNN)无法处理非欧几里得(Non Euclidean Structure)的数据，即传统的离散卷积在Non Euclidean Structure的数据上无法保持平移不变性。因为在拓扑图中每个顶点的相邻顶点数目都可能不同，那么也就无法用一个同样的尺寸的卷积核来进行卷积运算。CNN无法处理Non Euclidean Structure的数据，又希望在拓扑图上有效的提取空间特征来进行学习，所以GCN成为研究重点。
 
 卷积图神经网络(ConvGNN)与循环图神经网络(RecGNN)密切相关。ConvGNN不是使用收缩约束来迭代节点状态，而是在结构上使用固定数量的层(在每一层中具有不同的权重)来解决循环的相互依赖性。图\ref{fig:RGNN_CGNN}说明了这一主要区别。由于图卷积更加有效且易于与其他神经网络进行结合，因此，ConvGNN近年来得到了迅速的发展。ConvGNN分为两类，基于频谱的ConvGNN和基于空间的ConvGNN。基于频谱的ConvGNN通过从图信号处理的角度引入滤波器来定义图卷积，其中图卷积运算被解释为消除图信号中的噪声。基于空间的ConvGNN通过信息聚合，以定义图卷积。自从GCN弥合了基于频谱的方法与基于空间的方法之间的差距以来，基于空间的方法由于其引人注目的效率，灵活性和通用性而迅速发展。
@@ -9,7 +9,7 @@
 	{
 		\begin{minipage}[t]{0.5\textwidth}
 			\centering         
-			\includegraphics[width=1\textwidth]{Fig/RecGNNa.pdf}   
+			\includegraphics[width=\textwidth]{Fig/RecGNNa.pdf}   
 		\end{minipage}
 	}
 
@@ -17,7 +17,7 @@
 	{
 		\begin{minipage}[t]{0.5\textwidth}
 			\centering      
-			\includegraphics[width=1\textwidth]{Fig/CGNNb.pdf}   
+			\includegraphics[width=\textwidth]{Fig/CGNNb.pdf}   
 		\end{minipage}
 		
 	}
